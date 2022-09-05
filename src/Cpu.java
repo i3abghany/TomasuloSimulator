@@ -19,15 +19,15 @@ public class Cpu {
     private static final int WRITEBACK_STAGE = 3;
     private final Instruction[] instructionsInStages = new Instruction[4];
 
-    public Cpu() {
-        instructions = new ArrayList<>();
+    public Cpu(ArrayList<Instruction> _instructions) {
+        instructions = _instructions;
         position = 0;
         registerFile = new RegisterFile();
         commonDataBus = new CommonDataBus(registerFile, new ArrayList<>(List.of(addReservationStation)));
     }
 
-    private void run() {
-        while (true) {
+    public void run() {
+        do {
             var fetchedInstruction = fetch();
             var finalizedInstruction = shiftPipeline(fetchedInstruction);
 
@@ -55,8 +55,7 @@ public class Cpu {
                 }
             }
 
-            if (emptyPipeline()) break;
-        }
+        } while (!emptyPipeline());
     }
 
     private boolean emptyPipeline() {
@@ -108,16 +107,5 @@ public class Cpu {
 
     public RegisterFile getRegisterFile() {
         return registerFile;
-    }
-
-    public static void main(String[] args) {
-        var cpu = new Cpu();
-        cpu.instructions.add(Instruction.fromString("ADD R1, R2, R3"));
-        cpu.instructions.add(Instruction.fromString("ADD R5, R1, R6"));
-        cpu.instructions.add(Instruction.fromString("ADD R3, R5, R6"));
-        cpu.instructions.add(Instruction.fromString("ADD R4, R5, R6"));
-        cpu.instructions.add(Instruction.fromString("ADD R5, R1, R6"));
-
-        cpu.run();
     }
 }
