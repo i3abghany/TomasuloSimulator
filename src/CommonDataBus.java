@@ -10,8 +10,11 @@ public class CommonDataBus {
     }
 
     public void broadcastValue(String tag, int value) {
-        connectedRegisterFile.broadcastValue(tag, value);
         for (var station: reservationStations)
             station.broadcastValue(tag, value);
+    }
+
+    public void writeBack(String tag, int value) {
+        connectedRegisterFile.broadcastValue(tag, value);
     }
 }

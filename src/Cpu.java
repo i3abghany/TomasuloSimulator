@@ -24,9 +24,22 @@ public class Cpu {
     }
 
     public void run() {
+        boolean mustStall = false;
+        String finalizedTag = null;
+        int finalizedValue = -1;
+
         do {
-            var fetchedInstruction = fetch();
-            var finalizedInstruction = shiftPipeline(fetchedInstruction);
+            Instruction writebackInstruction;
+            if (!mustStall) {
+                var fetchedInstruction = fetch();
+                writebackInstruction = shiftPipeline(fetchedInstruction);
+            } else {
+                writebackInstruction = shiftFromExecuteStage();
+            }
+
+            if (finalizedTag != null) {
+                commonDataBus.writeBack(finalizedTag, finalizedValue);
+            }
 
             var readySlot = addReservationStation.getOccupiedReadySlot();
             ReservationStationSlot slotToExecute = null;
@@ -34,8 +47,9 @@ public class Cpu {
                 slotToExecute = addReservationStation.getAt(readySlot);
             }
 
-            if (instructionsInStages[DECODE_STAGE] != null)
-                decode(instructionsInStages[DECODE_STAGE]);
+            if (instructionsInStages[DECODE_STAGE] != null) {
+                mustStall = !decode();
+            }
 
             if (addExecutionUnit.hasInstruction()) {
                 addExecutionUnit.progress();
@@ -43,6 +57,8 @@ public class Cpu {
                     var executingSlot = addExecutionUnit.getCurrentSlot();
                     var value = addExecutionUnit.calc();
                     commonDataBus.broadcastValue(Integer.toString(executingSlot.getTag()), value);
+                    finalizedTag = Integer.toString(executingSlot.getTag());
+                    finalizedValue = value;
                     addReservationStation.removeSlot(addExecutionUnit.getCurrentSlot());
                 }
             } else {
@@ -62,7 +78,8 @@ public class Cpu {
         return pipelineEmpty;
     }
 
-    private boolean decode(Instruction instruction) {
+    private boolean decode() {
+        Instruction instruction = instructionsInStages[DECODE_STAGE];
         boolean isSource1Valid = registerFile.isValid(instruction.getOp1());
         boolean isSource2Valid = registerFile.isValid(instruction.getOp2());
 
@@ -90,12 +107,27 @@ public class Cpu {
         return true;
     }
 
-    private Instruction shiftPipeline(Instruction fetchedInstruction) {
+    private Instruction shiftFromStage(int stage, Instruction injectedInstruction) {
         Instruction writebackInstruction = instructionsInStages[WRITEBACK_STAGE];
-        for (int i = 1; i < N_STAGES; i++)
+        for (int i = stage + 1; i < N_STAGES; i++) {
             instructionsInStages[i] = instructionsInStages[i - 1];
-        instructionsInStages[0] = fetchedInstruction;
+        }
+        instructionsInStages[stage] = injectedInstruction;
         return writebackInstruction;
+    }
+
+    private Instruction shiftPipeline(Instruction fetchedInstruction) {
+        return shiftFromStage(FETCH_STAGE, fetchedInstruction);
+    }
+
+    /**
+     * Shift the execute and writeback stages and inject a bubble in execute. Should be used in the case of not having
+     * an empty reservation slot.
+     *
+     * @return The writeback stage instruction that exited the pipeline.
+     */
+    private Instruction shiftFromExecuteStage() {
+        return shiftFromStage(EXECUTE_STAGE, null);
     }
 
     private Instruction fetch() {
