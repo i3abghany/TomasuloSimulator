@@ -9,9 +9,6 @@ public class Cpu {
     private final ExecutionUnit addExecutionUnit = new AddExecutionUnit(this);
     private final CommonDataBus commonDataBus;
 
-    private static final int CYCLES_PER_ADD = 4;
-    private static final int CYCLES_PER_MUL = 6;
-
     private static final int N_STAGES = 4;
     private static final int FETCH_STAGE = 0;
     private static final int DECODE_STAGE = 1;

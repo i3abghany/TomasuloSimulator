@@ -1,7 +1,7 @@
 public class MulExecutionUnit extends ExecutionUnit {
 
     public MulExecutionUnit(Cpu cpu) {
-        super(6);
+        super(CYCLES_PER_MUL);
     }
 
     @Override

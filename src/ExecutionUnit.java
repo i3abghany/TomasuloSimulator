@@ -2,6 +2,9 @@ public abstract class ExecutionUnit {
     private final int opCycles;
     protected ReservationStationSlot currentSlot = null;
 
+    protected static final int CYCLES_PER_ADD = 4;
+    protected static final int CYCLES_PER_MUL = 6;
+
     public int getOpCycles() {
         return opCycles;
     }

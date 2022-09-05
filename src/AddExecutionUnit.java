@@ -1,7 +1,7 @@
 public class AddExecutionUnit extends ExecutionUnit {
 
     public AddExecutionUnit(Cpu cpu) {
-        super(1);
+        super(CYCLES_PER_ADD);
     }
 
     @Override
